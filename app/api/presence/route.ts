@@ -8,7 +8,8 @@ import {
   where, 
   getDocs,
   Timestamp,
-  doc
+  doc,
+  getDoc
 } from 'firebase/firestore';
 
 // Helper: Haversine distance
@@ -50,10 +51,10 @@ async function checkMatches(packet: PresencePacket): Promise<Encounter[]> {
     
     const presenceDocs = await getDocs(presenceQuery);
     
-    presenceDocs.forEach((doc) => {
-      const otherPacket = doc.data() as PresencePacket;
+    for (const presenceDoc of presenceDocs.docs) {
+      const otherPacket = presenceDoc.data() as PresencePacket;
       
-      if (otherPacket.userId === packet.userId) return;
+      if (otherPacket.userId === packet.userId) continue;
 
       const distance = calculateDistance(
         packet.lat,
@@ -65,27 +66,36 @@ async function checkMatches(packet: PresencePacket): Promise<Encounter[]> {
 
       // Check if proximity match
       if (distance < MAX_DISTANCE && timeDiff < MAX_TIME_WINDOW) {
-        // Create encounter
-        const encounterId = `${packet.userId}_${otherPacket.userId}_${Date.now()}`;
-        const encounter: Encounter = {
-          encounterId,
-          userA: packet.userId,
-          userB: otherPacket.userId,
-          timestamp: Date.now(),
-          exchange: {
-            gift: 'A nice memory',
-            avatarSnapshot: otherPacket.data.avatarUrl,
-            nameSnapshot: otherPacket.data.name,
-            messageSnapshot: otherPacket.data.message,
-            emailSnapshot: otherPacket.data.email,
-          },
-          distance,
-          discovered: false,
-        };
+        // Use deterministic ID based on sorted userIds to prevent duplicates
+        const sortedIds = [packet.userId, otherPacket.userId].sort();
+        const encounterId = `${sortedIds[0]}_${sortedIds[1]}`;
+        
+        // Check if encounter already exists
+        const encounterRef = doc(collection(db, 'encounters'), encounterId);
+        const existingEncounter = await getDoc(encounterRef);
+        
+        // Only create if doesn't exist
+        if (!existingEncounter.exists()) {
+          const encounter: Encounter = {
+            encounterId,
+            userA: sortedIds[0],
+            userB: sortedIds[1],
+            timestamp: Date.now(),
+            exchange: {
+              gift: 'A nice memory',
+              avatarSnapshot: otherPacket.data.avatarUrl,
+              nameSnapshot: otherPacket.data.name,
+              messageSnapshot: otherPacket.data.message,
+              emailSnapshot: otherPacket.data.email,
+            },
+            distance,
+            discovered: false,
+          };
 
-        newEncounters.push(encounter);
+          newEncounters.push(encounter);
+        }
       }
-    });
+    }
   } catch (error) {
     console.error('Error checking matches:', error);
   }

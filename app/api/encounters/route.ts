@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Encounter } from '@/types';
+import { Encounter, EncounterDisplay } from '@/types';
 import { db } from '@/lib/firebase';
 import { 
   collection, 
@@ -36,22 +36,37 @@ export async function GET(request: NextRequest) {
     
     const encounterDocsB = await getDocs(encounterQuery2);
 
-    const userEncounters: Encounter[] = [];
+    const uniqueEncounters = new Map<string, any>();
     
     encounterDocsA.forEach((doc) => {
-      userEncounters.push(doc.data() as Encounter);
+      const encounter = doc.data() as Encounter;
+      uniqueEncounters.set(encounter.encounterId, encounter);
     });
     
     encounterDocsB.forEach((doc) => {
-      userEncounters.push(doc.data() as Encounter);
+      const encounter = doc.data() as Encounter;
+      uniqueEncounters.set(encounter.encounterId, encounter);
     });
 
+    // Transform to EncounterDisplay format with proper names and messages
+    const displayEncounters = Array.from(uniqueEncounters.values()).map((encounter: Encounter) => ({
+      encounterId: encounter.encounterId,
+      name: encounter.exchange.nameSnapshot || 'Unknown',
+      message: encounter.exchange.messageSnapshot || '',
+      email: encounter.exchange.emailSnapshot || '',
+      avatarUrl: encounter.exchange.avatarSnapshot || '',
+      timestamp: encounter.timestamp,
+      gift: encounter.exchange.gift || 'A nice memory',
+      distance: encounter.distance || 0,
+      isNew: !encounter.discovered,
+    }));
+
     // Sort by timestamp descending
-    userEncounters.sort((a, b) => b.timestamp - a.timestamp);
+    displayEncounters.sort((a, b) => b.timestamp - a.timestamp);
 
     return NextResponse.json({
-      encounters: userEncounters,
-      count: userEncounters.length,
+      encounters: displayEncounters,
+      count: displayEncounters.length,
     });
   } catch (error) {
     console.error('Encounters API error:', error);
