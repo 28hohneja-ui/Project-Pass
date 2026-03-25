@@ -76,8 +76,9 @@ export default function EncounterHub({ userProfile }: EncounterHubProps) {
         }
       );
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to enable location';
       console.error('Location error:', error);
-      alert('Please enable location services to use Streetpass');
+      alert(errorMessage);
     }
   };
 

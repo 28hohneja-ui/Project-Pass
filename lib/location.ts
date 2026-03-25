@@ -29,7 +29,7 @@ export async function getCurrentLocation(): Promise<{
 }> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
-      reject(new Error('Geolocation not supported'));
+      reject(new Error('Geolocation not supported on this device'));
       return;
     }
 
@@ -43,7 +43,15 @@ export async function getCurrentLocation(): Promise<{
         });
       },
       (error) => {
-        reject(error);
+        if (error.code === error.PERMISSION_DENIED) {
+          reject(new Error('Location permission denied. Please allow location access when the browser asks.'));
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          reject(new Error('Location unavailable. Please check your GPS settings.'));
+        } else if (error.code === error.TIMEOUT) {
+          reject(new Error('Location request timed out. Please try again.'));
+        } else {
+          reject(new Error(`Location error: ${error.message}`));
+        }
       },
       {
         enableHighAccuracy: true,
