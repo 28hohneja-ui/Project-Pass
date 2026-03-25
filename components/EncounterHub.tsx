@@ -56,6 +56,9 @@ export default function EncounterHub({ userProfile }: EncounterHubProps) {
   // Request location permission
   const handleEnableLocation = async () => {
     try {
+      // Show message that permission prompt is coming
+      alert('A permission prompt will appear. Please tap "Allow" to share your location with Streetpass.');
+      
       const location = await getCurrentLocation();
       setCurrentLocation(location);
       setLocationGranted(true);
