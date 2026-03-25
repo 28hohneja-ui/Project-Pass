@@ -1,0 +1,12 @@
+{
+  "appHosting": [
+    {
+      "site": "streetpass-fadc9",
+      "repo": "28hohneja-ui/Project-Pass",
+      "branch": "master",
+      "buildConfig": {
+        "invokeCommand": "npm run build"
+      }
+    }
+  ]
+}
