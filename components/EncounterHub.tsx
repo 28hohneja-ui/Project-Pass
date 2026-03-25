@@ -56,8 +56,12 @@ export default function EncounterHub({ userProfile }: EncounterHubProps) {
   // Request location permission
   const handleEnableLocation = async () => {
     try {
+      console.log('Starting location request...');
+      
       // Call getCurrentLocation directly - this triggers the native permission prompt
       const location = await getCurrentLocation();
+      console.log('Location received:', location);
+      
       setCurrentLocation(location);
       setLocationGranted(true);
       setIsActive(true);
@@ -77,9 +81,9 @@ export default function EncounterHub({ userProfile }: EncounterHubProps) {
         }
       );
     } catch (error) {
+      console.error('Location error caught:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to enable location';
-      console.error('Location error:', error);
-      alert(errorMessage);
+      alert(`Location Error: ${errorMessage}`);
     }
   };
 

@@ -28,13 +28,17 @@ export async function getCurrentLocation(): Promise<{
   accuracy: number;
 }> {
   return new Promise((resolve, reject) => {
+    console.log('getCurrentLocation: Checking geolocation support...');
     if (!navigator.geolocation) {
+      console.error('Geolocation not supported');
       reject(new Error('Geolocation not supported on this device'));
       return;
     }
 
+    console.log('getCurrentLocation: Calling navigator.geolocation.getCurrentPosition...');
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        console.log('getCurrentLocation: Position received', position);
         const { latitude, longitude, accuracy } = position.coords;
         resolve({
           lat: latitude,
@@ -43,6 +47,7 @@ export async function getCurrentLocation(): Promise<{
         });
       },
       (error) => {
+        console.error('getCurrentLocation: Error received', error.code, error.message);
         if (error.code === error.PERMISSION_DENIED) {
           reject(new Error('Location permission denied. Please allow location access when the browser asks.'));
         } else if (error.code === error.POSITION_UNAVAILABLE) {
